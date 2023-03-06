@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "es2020",
+        "strict": true,
+        "incremental": true,
+        "forceConsistentCasingInFileNames": true,
+        "declaration": true,
+        "declarationDir": "./dist",
+        "emitDeclarationOnly": true,
+        "esModuleInterop": true,
+        "skipLibCheck": false,
+        "allowJs": true,
+        "moduleResolution": "node"
+    },
+    "include": [
+        "lib",
+        "imports.d.ts"
+    ],
+    "exclude": [
+        "dist"
+    ]
+}

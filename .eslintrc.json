@@ -1,0 +1,57 @@
+{
+    "root": true,
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/recommended",
+        "plugin:import/typescript",
+        "plugin:prettier/recommended"
+    ],
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaVersion": "latest",
+        "allowImportExportEverywhere": true,
+        "warnOnUnsupportedTypeScriptVersion": true
+    },
+    "env": {
+        "browser": true,
+        "es2022": true
+    },
+    "settings": {
+        "import/parsers": {
+            "@typescript-eslint/parser": [
+                ".ts",
+                ".mts",
+                ".cts",
+                ".d.ts"
+            ]
+        },
+        "import/resolver": {
+            "node": {
+                "extensions": [
+                    ".js",
+                    ".ts"
+                ]
+            },
+            "typescript": {
+                "alwaysTryTypes": true
+            }
+        }
+    },
+    "ignorePatterns": [
+        "/dist/*",
+        "/typings/*"
+    ],
+    "rules": {
+        "semi": [
+            "error",
+            "never"
+        ],
+        "max-len": [
+            "error",
+            {
+                "code": 135
+            }
+        ]
+    }
+}
