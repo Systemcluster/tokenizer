@@ -1,5 +1,23 @@
-import { File, OpenFile, WASI } from '@bjorn3/browser_wasi_shim'
-import { Encoder } from 'cbor-x'
+import { WASI, Fd, File, OpenFile } from '@bjorn3/browser_wasi_shim'
+import { Encoder } from 'msgpackr'
+
+class ConsoleOutput extends Fd {
+    level: 'debug' | 'info' | 'warn' | 'error'
+    constructor(level: 'debug' | 'info' | 'warn' | 'error') {
+        super()
+        this.level = level
+    }
+    fd_write(view8: Uint8Array, iovs: Array<{ buf: number; buf_len: number }>) {
+        let nwritten = 0
+        for (const iovec of iovs) {
+            const buffer = view8.slice(iovec.buf, iovec.buf + iovec.buf_len)
+            const output = new TextDecoder().decode(buffer)
+            console[this.level](output)
+            nwritten += iovec.buf_len
+        }
+        return { ret: 0, nwritten }
+    }
+}
 
 export class WebModule {
     readonly wasi: WASI
@@ -15,16 +33,13 @@ export class WebModule {
             variableMapSize: true,
             useRecords: false,
             structuredClone: false,
-            tagUint8Array: false,
-            useSelfDescribedHeader: false,
-            pack: false,
         })
     }
 
     public static async load(data: BufferSource) {
         const arg: string[] = []
         const env: string[] = []
-        const fds = [new OpenFile(new File([])), new OpenFile(new File([])), new OpenFile(new File([]))]
+        const fds = [new OpenFile(new File([])), new ConsoleOutput('info'), new ConsoleOutput('error')]
         const wasi = new WASI(arg, env, fds)
         const wasm = await WebAssembly.compile(data)
         const inst = await WebAssembly.instantiate(wasm, { wasi_snapshot_preview1: wasi.wasiImport })

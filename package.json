@@ -24,9 +24,9 @@
         "test": "cargo build --target wasm32-wasi --release && tsc && rollup -c && node --test"
     },
     "dependencies": {
-        "@bjorn3/browser_wasi_shim": "^0.2.6",
-        "cbor-x": "^1.5.1",
-        "fflate": "^0.7.4"
+        "@bjorn3/browser_wasi_shim": "^0.2.7",
+        "fflate": "^0.7.4",
+        "msgpackr": "^1.8.5"
     },
     "peerDependencies": {
         "fflate": "^0.7.4"

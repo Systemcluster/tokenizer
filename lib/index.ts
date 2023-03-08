@@ -10,8 +10,11 @@ export interface LoadTokenizerTiktoken {
     special_bpe: [string, number][]
     regex: string
 }
+export interface LoadTokenizerHuggingface {
+    model: string
+}
 
-export type LoadTokenizerInput = LoadTokenizerTiktoken
+export type LoadTokenizerInput = LoadTokenizerTiktoken | LoadTokenizerHuggingface
 
 export class Tokenizer {
     private webm: WebModule
@@ -47,27 +50,32 @@ export class Tokenizer {
         return new Tokenizer(webm)
     }
 
-    public load(input: LoadTokenizerInput) {
-        this.webm.call('load-tokenizer', input)
+    public load(name: string, data: LoadTokenizerInput) {
+        this.webm.call('load-tokenizer', {
+            name,
+            data,
+        })
     }
 
-    public encode(tokenizer: string, input: string): Uint32Array {
+    public encode(tokenizer: string, input: string, special_tokens = true): Uint32Array {
         const result = this.webm.call_raw(
             'encode',
             this.webm.pack.encode({
                 name: tokenizer,
                 input,
+                special_tokens,
             })
         )
         return new Uint32Array(result.buffer, result.byteOffset, result.byteLength / 4)
     }
 
-    public decode(tokenizer: string, input: Uint32Array): string {
+    public decode(tokenizer: string, input: Uint32Array, special_tokens = true): string {
         const result = this.webm.call_raw(
             'decode',
             this.webm.pack.encode({
                 name: tokenizer,
                 input: new Uint8Array(input.buffer),
+                special_tokens,
             })
         )
         return new TextDecoder().decode(result)
