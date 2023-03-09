@@ -1,5 +1,6 @@
 default world tokenizer-interface {
-    export load-tokenizer: func(input: list<u8>) -> result<_, string>
+    export load-tokenizer: func(input: list<u8>) -> result<u32, string>
+    export unload-tokenizer: func(input: list<u8>) -> result<u32, string>
     export encode: func(input: list<u8>) -> result<list<u8>, string>
     export decode: func(input: list<u8>) -> result<list<u8>, string>
 }

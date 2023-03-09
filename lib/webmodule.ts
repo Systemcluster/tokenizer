@@ -115,6 +115,9 @@ export class WebModule {
             resultTag = 0
         }
         const outputPtr = new DataView(this.memory.buffer).getInt32(ptr, true)
+        if (outputPtr === 0) {
+            return [new Uint8Array(0), resultTag === 0]
+        }
         const outputLen = new DataView(this.memory.buffer).getInt32(ptr + 4, true)
         const result = new Uint8Array(this.memory.buffer.slice(outputPtr, outputPtr + outputLen))
         return [result, resultTag === 0]

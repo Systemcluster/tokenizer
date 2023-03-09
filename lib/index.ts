@@ -18,9 +18,11 @@ export type LoadTokenizerInput = LoadTokenizerTiktoken | LoadTokenizerHuggingfac
 
 export class Tokenizer {
     private webm: WebModule
+    private loaded: Array<string>
 
     private constructor(webm: WebModule) {
         this.webm = webm
+        this.loaded = []
     }
 
     public static async create() {
@@ -50,11 +52,21 @@ export class Tokenizer {
         return new Tokenizer(webm)
     }
 
+    public getLoaded(): Array<string> {
+        return [...this.loaded]
+    }
+
     public load(name: string, data: LoadTokenizerInput) {
         this.webm.call('load-tokenizer', {
             name,
             data,
         })
+        this.loaded.push(name)
+    }
+
+    public unload(name: string) {
+        this.webm.call('unload-tokenizer', name)
+        this.loaded = this.loaded.filter((x) => x !== name)
     }
 
     public encode(tokenizer: string, input: string, special_tokens = true): Uint32Array {

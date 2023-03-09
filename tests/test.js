@@ -10,6 +10,25 @@ import url from 'node:url'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
+test('load-unload', async () => {
+    const data = fs.readFileSync(path.resolve(__dirname, './neox_20b_tokenizer.json'), 'utf-8')
+    const { Tokenizer } = await import('../dist/index.js')
+
+    const tokenizer = await Tokenizer.create()
+    tokenizer.load('neox20b', {
+        model: data,
+    })
+    tokenizer.encode('neox20b', 'Hello World!')
+    tokenizer.load('neox20🚀b', {
+        model: data,
+    })
+    tokenizer.encode('neox20🚀b', 'Hello World!')
+    tokenizer.encode('neox20b', 'Hello World!')
+    tokenizer.unload('neox20b')
+    tokenizer.encode('neox20🚀b', 'This is a very long text which will result in lots of tokens.')
+    tokenizer.unload('neox20🚀b')
+})
+
 test('encode-tiktoken', async () => {
     const data = fs.readFileSync(path.resolve(__dirname, './cl100k_base.tiktoken'), 'utf-8')
     const { Tokenizer } = await import('../dist/index.js')

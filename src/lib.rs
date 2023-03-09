@@ -32,23 +32,29 @@ enum LoadTokenizerVariant {
     },
 }
 
+#[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
 struct LoadTokenizerInput {
-    name: String,
+    #[serde_as(as = "BytesOrString")]
+    name: Vec<u8>,
     data: LoadTokenizerVariant,
 }
 
+#[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
 struct EncodeInput {
-    name:           String,
-    input:          String,
+    #[serde_as(as = "BytesOrString")]
+    name:           Vec<u8>,
+    #[serde_as(as = "BytesOrString")]
+    input:          Vec<u8>,
     special_tokens: Option<bool>,
 }
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug)]
 struct DecodeInput {
-    name:           String,
+    #[serde_as(as = "BytesOrString")]
+    name:           Vec<u8>,
     #[serde_as(as = "BytesOrString")]
     input:          Vec<u8>,
     special_tokens: Option<bool>,
@@ -58,11 +64,16 @@ thread_local! {
     static TOKENIZERS: RefCell<HashMap<String, TokenizerVariant>> = RefCell::new(HashMap::new());
 }
 
+fn deserialize<T>(input: &[u8]) -> Result<T, String>
+where
+    T: serde::de::DeserializeOwned, {
+    rmp_serde::from_slice(input).map_err(|e| format!("{:?}", e))
+}
+
 struct TokenizerImpl;
 impl TokenizerInterface for TokenizerImpl {
-    fn load_tokenizer(input: Vec<u8>) -> Result<(), String> {
-        let input = rmp_serde::from_slice::<LoadTokenizerInput>(&input[..])
-            .map_err(|e| format!("{}: {:?}", e, input))?;
+    fn load_tokenizer(input: Vec<u8>) -> Result<u32, String> {
+        let input = deserialize::<LoadTokenizerInput>(&input[..])?;
         match input.data {
             LoadTokenizerVariant::LoadTokenizerTiktoken {
                 bpe,
@@ -75,35 +86,50 @@ impl TokenizerInterface for TokenizerImpl {
                     &regex,
                 )?;
                 TOKENIZERS.with(|map| {
-                    map.borrow_mut()
-                        .insert(input.name, TokenizerVariant::TokenizerTiktoken(tokenizer))
+                    map.borrow_mut().insert(
+                        String::from_utf8(input.name).unwrap(),
+                        TokenizerVariant::TokenizerTiktoken(tokenizer),
+                    )
                 });
             }
             LoadTokenizerVariant::LoadTokenizerHuggingface { model } => {
                 let tokenizer = Tokenizer::from_bytes(&model).map_err(|e| format!("{:?}", e))?;
                 TOKENIZERS.with(|map| {
-                    map.borrow_mut()
-                        .insert(input.name, TokenizerVariant::TokenizerHuggingface(tokenizer))
+                    map.borrow_mut().insert(
+                        String::from_utf8(input.name).unwrap(),
+                        TokenizerVariant::TokenizerHuggingface(tokenizer),
+                    )
                 });
             }
         }
-        Ok(())
+        Ok(0)
+    }
+
+    fn unload_tokenizer(input: Vec<u8>) -> Result<u32, String> {
+        let input = String::from_utf8(input).unwrap();
+        TOKENIZERS.with(|map| {
+            map.borrow_mut().remove(&input);
+        });
+        Ok(0)
     }
 
     fn encode(input: Vec<u8>) -> Result<Vec<u8>, String> {
-        let input = rmp_serde::from_slice::<EncodeInput>(&input[..])
-            .map_err(|e| format!("{}: {:?}", e, input))?;
+        let input = deserialize::<EncodeInput>(&input[..])?;
         TOKENIZERS.with(|map| {
             let map = map.borrow();
-            let tokenizer = map.get(&input.name).ok_or("Tokenizer not found")?;
+            let tokenizer =
+                map.get(&String::from_utf8(input.name).unwrap()).ok_or("Tokenizer not found")?;
             match tokenizer {
                 TokenizerVariant::TokenizerTiktoken(tokenizer) => {
-                    let result = tokenizer.encode(&input.input);
+                    let result = tokenizer.encode(&String::from_utf8(input.input).unwrap());
                     Ok(result.iter().map(|x| (*x).to_le_bytes()).flatten().collect())
                 }
                 TokenizerVariant::TokenizerHuggingface(tokenizer) => {
                     let result = tokenizer
-                        .encode(input.input, input.special_tokens.unwrap_or(true))
+                        .encode(
+                            String::from_utf8(input.input).unwrap(),
+                            input.special_tokens.unwrap_or(true),
+                        )
                         .map_err(|e| format!("{:?}", e))?;
                     Ok(result.get_ids().iter().map(|x| (*x).to_le_bytes()).flatten().collect())
                 }
@@ -112,11 +138,11 @@ impl TokenizerInterface for TokenizerImpl {
     }
 
     fn decode(input: Vec<u8>) -> Result<Vec<u8>, String> {
-        let input = rmp_serde::from_slice::<DecodeInput>(&input[..])
-            .map_err(|e| format!("{}: {:?}", e, input))?;
+        let input = deserialize::<DecodeInput>(&input[..])?;
         TOKENIZERS.with(|map| {
             let map = map.borrow();
-            let tokenizer = map.get(&input.name).ok_or("Tokenizer not found")?;
+            let tokenizer =
+                map.get(&String::from_utf8(input.name).unwrap()).ok_or("Tokenizer not found")?;
             match tokenizer {
                 TokenizerVariant::TokenizerTiktoken(tokenizer) => {
                     let tokens = input
