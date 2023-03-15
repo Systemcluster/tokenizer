@@ -29,9 +29,12 @@ strip = "symbols"
 [dependencies]
 base64 = { version = "0.21.0", default-features = false, features = ["alloc"] }
 bstr = { version = "1.3.0", default-features = false, features = ["alloc"] }
-fancy-regex = { version = "0.11.0", default-features = false, features = ["unicode"] }
+fancy-regex = { version = "0.11.0" }
 wit-bindgen = { git = "https://github.com/bytecodealliance/wit-bindgen.git" }
-serde = { version = "1.0.154", default-features = false, features = ["alloc", "derive", "std"] }
-serde_with = { version = "2.2.0", default-features = false, features = ["alloc", "macros"] }
+serde = { version = "1.0.156", default-features = false, features = ["alloc", "derive", "std"] }
+serde_with = { version = "2.3.1", default-features = false, features = ["alloc", "macros"] }
 tokenizers = { git = "https://github.com/Systemcluster/tokenizers.git", branch = "wasi", default-features = false, features = ["unstable_wasi"] }
 rmp-serde = "1.1.1"
+
+[patch.crates-io]
+unicode-normalization = { git = "https://github.com/Systemcluster/unicode-normalization" }
